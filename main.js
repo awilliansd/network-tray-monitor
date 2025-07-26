@@ -3,9 +3,9 @@ const path = require('path');
 const ping = require('ping');
 
 const IP_LIST = [
-    "TETRAGRAMMATON",
-    "ZoomHardDesk",
-    "VortextFusion"
+    "192.168.1.2",
+    "192.168.1.3",
+    "192.168.1.4"
 ];
 
 let tray = null;
