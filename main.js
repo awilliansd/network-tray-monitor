@@ -1,4 +1,4 @@
-const { app, Menu, Tray, BrowserWindow } = require('electron');
+const { app, Menu, Tray, BrowserWindow, Notification } = require('electron');
 const path = require('path');
 const ping = require('ping');
 
@@ -9,6 +9,7 @@ const IP_LIST = [
 ];
 
 let tray = null;
+let hostsStatus = {};
 
 async function getStatusList() {
     const results = await Promise.all(IP_LIST.map(async (ip) => {
@@ -40,9 +41,45 @@ function createMenu(statusList) {
     return Menu.buildFromTemplate(items);
 }
 
+// Função para enviar notificação
+function sendNotification(title, body) {
+    if (Notification.isSupported()) {
+        const iconPath = getIconPath(); // Reutiliza a função para obter o caminho do ícone
+        new Notification({
+            title: title,
+            body: body,
+            icon: iconPath
+        }).show();
+    } else {
+        console.log('Notificações não são suportadas neste ambiente.');
+    }
+}
+
 async function updateMenu() {
-    const status = await getStatusList();
-    const menu = createMenu(status);
+    const currentStatusList = await getStatusList();
+
+    // Lógica para verificar e enviar notificações
+    currentStatusList.forEach(s => {
+        // Se o host não tinha status anterior ou se o status mudou para online
+        if (hostsStatus[s.ip] === undefined) {
+            // Inicializa o status na primeira execução, sem notificar (opcional: notificar todos online no início)
+            hostsStatus[s.ip] = s.online;
+            if (s.online) {
+                // Você pode optar por notificar que está online no primeiro check, ou não.
+                // sendNotification('Status da Rede', `${s.ip} está online.`);
+            }
+        } else if (hostsStatus[s.ip] === false && s.online === true) {
+            // Se estava offline e agora está online, notificar
+            sendNotification('Status da Rede: Computador Online', `${s.ip} ficou ONLINE!`);
+            hostsStatus[s.ip] = true; // Atualiza o status
+        } else if (hostsStatus[s.ip] === true && s.online === false) {
+            // Se estava online e agora está offline, notificar (opcional)
+            sendNotification('Status da Rede: Computador Offline', `${s.ip} ficou OFFLINE!`);
+            hostsStatus[s.ip] = false; // Atualiza o status
+        }
+    });
+
+    const menu = createMenu(currentStatusList);
     tray.setContextMenu(menu);
 }
 
@@ -71,8 +108,13 @@ app.whenReady().then(() => {
     tray = new Tray(iconPath);
     tray.setToolTip('Monitoramento de Rede');
 
+    // Inicializa o status dos hosts e atualiza o menu
+    // Chamamos updateMenu uma vez para preencher hostsStatus e configurar o menu inicial.
+    // As notificações ocorrerão apenas em mudanças de estado subsequentes.
     updateMenu();
-    setInterval(updateMenu, 300000); // atualiza a cada 5 minuto
+    
+    // Atualiza a cada 5 minutos
+    setInterval(updateMenu, 300000); 
 });
 
 // Impede que a aplicação seja fechada completamente
