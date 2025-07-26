@@ -1,0 +1,52 @@
+{
+  "name": "network-tray-monitor",
+  "version": "1.0.0",
+  "description": "Monitoramento de computadores na rede via bandeja do sistema",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.alessandrowillian.networkmonitor",
+    "productName": "Network Tray Monitor",
+    "icon": "icons/app.ico",
+    "files": [
+      "**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icons/app.ico",
+      "publisherName": "Alessandro Willian",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "icons/app.ico",
+      "uninstallerIcon": "icons/app.ico"
+    },
+    "extraResources": [
+      {
+        "from": "icons/",
+        "to": "icons/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
+  },
+  "dependencies": {
+    "ping": "^0.4.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^25.1.8"
+  }
+}
