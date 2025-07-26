@@ -3,9 +3,9 @@ const path = require('path');
 const ping = require('ping');
 
 const IP_LIST = [
-    "192.168.1.100",      // IP do computador 1
-    "DESKTOP-ESCRITORIO", // Nome do computador 2
-    "SERVIDOR-CASA"       // Nome do computador 3
+    "TETRAGRAMMATON",
+    "ZoomHardDesk",
+    "VortextFusion"
 ];
 
 let tray = null;
@@ -61,24 +61,11 @@ app.whenReady().then(() => {
     // Define o ícone da aplicação
     const iconPath = getIconPath();
     
-    // Define o ícone padrão da aplicação
-    app.setAppUserModelId('com.alessandrowillian.networkmonitor');
-    
     // Cria uma janela invisível para definir o ícone da aplicação
     const hiddenWindow = new BrowserWindow({
         show: false,
-        icon: iconPath,
-        skipTaskbar: true,
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true
-        }
+        icon: iconPath
     });
-    
-    // Define o ícone da janela explicitamente
-    if (process.platform === 'win32') {
-        hiddenWindow.setIcon(iconPath);
-    }
     
     // Cria o tray
     tray = new Tray(iconPath);
