@@ -113,8 +113,8 @@ app.whenReady().then(() => {
     // As notificações ocorrerão apenas em mudanças de estado subsequentes.
     updateMenu();
     
-    // Atualiza a cada 5 minutos
-    setInterval(updateMenu, 300000); 
+    // Atualiza a cada 2 minutos
+    setInterval(updateMenu, 120000); 
 });
 
 // Impede que a aplicação seja fechada completamente
