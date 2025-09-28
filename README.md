@@ -30,6 +30,7 @@ cd network-tray-monitor
 2. **Instale as dependências**:
 ```bash
 npm install
+npm install electron --save-dev
 ```
 
 3. **Configure os IPs para monitoramento**:

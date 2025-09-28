@@ -1,6 +1,6 @@
 {
   "name": "network-tray-monitor",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Monitoramento de computadores na rede via bandeja do sistema",
   "main": "main.js",
   "scripts": {
@@ -46,7 +46,7 @@
     "ping": "^0.4.0"
   },
   "devDependencies": {
-    "electron": "^30.0.0",
+    "electron": "^30.5.1",
     "electron-builder": "^25.1.8"
   }
 }
