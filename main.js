@@ -3,20 +3,16 @@ const path = require('path');
 const ping = require('ping');
 
 const IP_LIST = [
-    "192.168.1.2",
-    "192.168.1.3"
+    "TETRAGRAMMATON",
+    "NEURANIUM",
+    "GALVORN",
+    "raspberrypi",
+    "SABRLFNNSCJ3"
 ];
 
 let tray = null;
 let hostsStatus = {};
 
-// Define AppUserModelID para garantir que toasts do Windows funcionem corretamente
-// try {
-//     // use o mesmo appId do package.json/build
-//     app.setAppUserModelId('com.alessandrowillian.networkmonitor');
-// } catch (e) {
-//     console.log('Falha ao setar AppUserModelId:', e && e.message);
-// }
 
 // Impede múltiplas instâncias usando o lock do Electron
 const gotTheLock = app.requestSingleInstanceLock();
