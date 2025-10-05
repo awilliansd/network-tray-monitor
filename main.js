@@ -4,12 +4,36 @@ const ping = require('ping');
 
 const IP_LIST = [
     "192.168.1.2",
-    "192.168.1.3",
-    "192.168.1.4"
+    "192.168.1.3"
 ];
 
 let tray = null;
 let hostsStatus = {};
+
+// Impede múltiplas instâncias usando o lock do Electron
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    // Se não obteve o lock, significa que já existe outra instância em execução.
+    // Sai imediatamente para evitar múltiplas instâncias.
+    app.quit();
+    // Em alguns cenários o processo pode ainda continuar, força saída.
+    process.exit(0);
+}
+
+// Se outra instância tentar iniciar, este evento será disparado na instância que possui o lock.
+app.on('second-instance', (event, argv, workingDirectory) => {
+    // Aqui podemos focar a janela existente ou exibir uma notificação.
+    // Como essa aplicação usa apenas um tray, não há janela principal visível para focar.
+    // Poderíamos enviar uma notificação ou abrir o menu do tray. Por simplicidade, apenas trazemos o app para frente.
+    if (tray) {
+        // Tenta abrir o menu de contexto para indicar que a instância já está rodando
+        try {
+            tray.popUpContextMenu();
+        } catch (e) {
+            // ignore
+        }
+    }
+});
 
 async function getStatusList() {
     const results = await Promise.all(IP_LIST.map(async (ip) => {
