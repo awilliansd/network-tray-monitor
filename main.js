@@ -10,6 +10,14 @@ const IP_LIST = [
 let tray = null;
 let hostsStatus = {};
 
+// Define AppUserModelID para garantir que toasts do Windows funcionem corretamente
+// try {
+//     // use o mesmo appId do package.json/build
+//     app.setAppUserModelId('com.alessandrowillian.networkmonitor');
+// } catch (e) {
+//     console.log('Falha ao setar AppUserModelId:', e && e.message);
+// }
+
 // Impede múltiplas instâncias usando o lock do Electron
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -25,13 +33,13 @@ app.on('second-instance', (event, argv, workingDirectory) => {
     // Aqui podemos focar a janela existente ou exibir uma notificação.
     // Como essa aplicação usa apenas um tray, não há janela principal visível para focar.
     // Poderíamos enviar uma notificação ou abrir o menu do tray. Por simplicidade, apenas trazemos o app para frente.
-    if (tray) {
-        // Tenta abrir o menu de contexto para indicar que a instância já está rodando
-        try {
-            tray.popUpContextMenu();
-        } catch (e) {
-            // ignore
-        }
+    // Em vez de abrir o menu, mostra uma notificação informando que já está em execução.
+    // Apenas mostra uma notificação informando que o app já está em execução.
+    // Não abrirá o menu do tray nem tomará qualquer outra ação.
+    try {
+        sendNotification('Monitoramento de Rede', 'O aplicativo já está em execução.');
+    } catch (e) {
+        console.log('Erro ao tentar notificar:', e && e.message);
     }
 });
 
@@ -67,15 +75,32 @@ function createMenu(statusList) {
 
 // Função para enviar notificação
 function sendNotification(title, body) {
-    if (Notification.isSupported()) {
-        const iconPath = getIconPath(); // Reutiliza a função para obter o caminho do ícone
-        new Notification({
-            title: title,
-            body: body,
-            icon: iconPath
-        }).show();
+    console.log('[sendNotification] chamado:', title, body);
+    const supported = Notification.isSupported();
+    console.log('[sendNotification] Notification.isSupported():', supported);
+    if (supported) {
+        try {
+            const iconPath = getIconPath(); // Reutiliza a função para obter o caminho do ícone
+            const n = new Notification({
+                title: title,
+                body: body,
+                icon: iconPath
+            });
+            n.show();
+            console.log('[sendNotification] notificação exibida');
+        } catch (e) {
+            console.log('[sendNotification] erro ao criar/exibir notificação:', e && e.message);
+        }
     } else {
-        console.log('Notificações não são suportadas neste ambiente.');
+        console.log('Notificações não são suportadas neste ambiente. Tentando balloon do tray (Windows).');
+        try {
+            if (tray && process.platform === 'win32' && typeof tray.displayBalloon === 'function') {
+                tray.displayBalloon({ title, content: body });
+                console.log('[sendNotification] tray.displayBalloon chamado como fallback');
+            }
+        } catch (e) {
+            console.log('[sendNotification] erro ao chamar tray.displayBalloon:', e && e.message);
+        }
     }
 }
 
