@@ -53,8 +53,6 @@ describe('main.js', () => {
   afterEach(() => {
     // Restaura NODE_ENV original
     process.env.NODE_ENV = originalNodeEnv;
-    // Limpa todos os timers
-    jest.clearAllTimers();
   });
 
   afterAll(() => {
@@ -84,8 +82,7 @@ describe('main.js', () => {
     
     expect(() => main.startApp()).not.toThrow();
     
-    // Avança timers para evitar execução assíncrona pós-teste
-    jest.advanceTimersByTime(1000);
+    // Aguarda promises pendentes
     await Promise.resolve();
   });
 });

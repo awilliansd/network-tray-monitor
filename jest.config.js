@@ -2,9 +2,11 @@ module.exports = {
   testEnvironment: 'node',
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
-    'app.js',
+    '**/*.js',
     '!node_modules/**',
-    '!coverage/**'
+    '!coverage/**',
+    '!icons/**',
+    '!main.js' // Exclui o arquivo principal se não quiser coverage dele
   ],
   testMatch: [
     '**/__tests__/**/*.js',
@@ -18,5 +20,10 @@ module.exports = {
       statements: 70
     }
   },
-  verbose: true
+  verbose: true,
+  forceExit: true,
+  detectOpenHandles: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true
 };
