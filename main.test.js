@@ -1,5 +1,4 @@
 // main.test.js - VERSÃO CORRIGIDA
-
 jest.mock('electron', () => ({
   app: {
     requestSingleInstanceLock: jest.fn(() => true),
@@ -17,58 +16,76 @@ jest.mock('electron', () => ({
   Notification: jest.fn(() => ({ show: jest.fn() })),
 }));
 
-// Mock específico para networkMonitor
 jest.mock('./networkMonitor', () => ({
   getStatusList: jest.fn().mockResolvedValue([]),
-  detectStatusChanges: jest.fn().mockReturnValue([]), // Garante que retorna array vazio
+  detectStatusChanges: jest.fn().mockReturnValue([]),
   createMenuTemplate: jest.fn().mockReturnValue([]),
 }));
 
-// Mock específico para config
 jest.mock('./config', () => ({
   IP_LIST: ['192.168.1.1'],
   PING_TIMEOUT: 1000,
   UPDATE_INTERVAL: 5000,
 }));
 
+jest.mock('path', () => ({
+  join: jest.fn((...args) => args.join('/'))
+}));
+
 const { app } = require('electron');
 
 describe('main.js', () => {
+  let main;
+  let originalNodeEnv;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    // Define NODE_ENV como test para evitar timers
+    originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'test';
+    
+    // Recarrega o módulo para cada teste
+    jest.isolateModules(() => {
+      main = require('./main');
+    });
+  });
+
+  afterEach(() => {
+    // Restaura NODE_ENV original
+    process.env.NODE_ENV = originalNodeEnv;
+    // Limpa todos os timers
+    jest.clearAllTimers();
+  });
+
+  afterAll(() => {
+    // Força saída após todos os testes
+    jest.restoreAllMocks();
   });
 
   test('deve inicializar corretamente', () => {
-    const main = require('./main');
-    
-    // Testa se as funções principais existem
     expect(typeof main.startApp).toBe('function');
     expect(typeof main.sendNotification).toBe('function');
     expect(typeof main.getIconPath).toBe('function');
   });
 
   test('sendNotification deve ser uma função', () => {
-    const main = require('./main');
     expect(typeof main.sendNotification).toBe('function');
   });
 
   test('getIconPath deve retornar uma string', () => {
-    const main = require('./main');
     const result = main.getIconPath();
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(0);
   });
 
   test('deve chamar startApp sem erros', async () => {
-    const main = require('./main');
-    
-    // Mock da função whenReady para resolver imediatamente
+    // Mock específico para este teste
     app.whenReady.mockImplementation(() => Promise.resolve());
     
-    // Chama startApp e verifica se não lança erro
     expect(() => main.startApp()).not.toThrow();
     
-    // Aguarda um tick para promises pendentes
-    await new Promise(process.nextTick);
+    // Avança timers para evitar execução assíncrona pós-teste
+    jest.advanceTimersByTime(1000);
+    await Promise.resolve();
   });
 });
