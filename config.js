@@ -2,8 +2,9 @@
 module.exports = {
   IP_LIST: [
     "TETRAGRAMMATON",
-    "NEURANIUM", 
-    "GALVORN",
+    "CHRONOS", 
+    "PROMETHEUS", 
+    "HEPHAESTUS",
     "raspberrypi",
     "SABRLFNNSCJ3"
   ],
