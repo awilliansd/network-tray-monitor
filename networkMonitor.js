@@ -114,7 +114,7 @@ function createMenuTemplate(statusList, onUpdate, onQuit) {
     // Adiciona demais hosts
     hostStatuses.forEach(s => {
         menuItems.push({
-            label: `${s.displayLabel || s.ip} — ${s.online ? '✅ Online' : '❌ Offline'}`,
+            label: `💻 ${s.displayLabel || s.ip} — ${s.online ? '✅ Online' : '❌ Offline'}`,
             enabled: false
         });
     });

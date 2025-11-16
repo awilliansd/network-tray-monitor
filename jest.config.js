@@ -25,5 +25,10 @@ module.exports = {
   detectOpenHandles: true,
   clearMocks: true,
   resetMocks: true,
-  restoreMocks: true
+  restoreMocks: true,
+  globals: {
+    'ts-jest': {
+      isolatedModules: true
+    }
+  }
 };

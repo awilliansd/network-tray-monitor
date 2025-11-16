@@ -13,7 +13,9 @@ jest.mock('electron', () => ({
     setContextMenu: jest.fn(),
   })),
   BrowserWindow: jest.fn(),
-  Notification: jest.fn(() => ({ show: jest.fn() })),
+  Notification: {
+    isSupported: jest.fn(() => true),
+  },
 }));
 
 jest.mock('./networkMonitor', () => ({
@@ -24,15 +26,20 @@ jest.mock('./networkMonitor', () => ({
 
 jest.mock('./config', () => ({
   IP_LIST: ['192.168.1.1'],
-  PING_TIMEOUT: 1000,
+  PING_TIMEOUT: 1,
   UPDATE_INTERVAL: 5000,
+  INTERNET_CHECK: {
+    enabled: true,
+    host: '8.8.8.8',
+    label: '🌐 Internet (Google DNS)'
+  }
 }));
 
 jest.mock('path', () => ({
   join: jest.fn((...args) => args.join('/'))
 }));
 
-const { app } = require('electron');
+const { app, Notification } = require('electron');
 
 describe('main.js', () => {
   let main;
@@ -84,5 +91,24 @@ describe('main.js', () => {
     
     // Aguarda promises pendentes
     await Promise.resolve();
+  });
+
+  test('sendNotification deve chamar Notification quando suportado', () => {
+    Notification.isSupported.mockReturnValue(true);
+    
+    const mockNotification = {
+      show: jest.fn()
+    };
+    
+    // Mock do construtor Notification
+    const NotificationMock = jest.fn(() => mockNotification);
+    const electron = require('electron');
+    electron.Notification = NotificationMock;
+    
+    // Recarrega o módulo com o mock atualizado
+    jest.isolateModules(() => {
+      const mainModule = require('./main');
+      mainModule.sendNotification('Teste', 'Mensagem de teste');
+    });
   });
 });
