@@ -54,15 +54,23 @@ function startApp() {
 
   async function updateMenu() {
     try {
-      const currentStatusList = await getStatusList(config.IP_LIST, config.PING_TIMEOUT);
+      const currentStatusList = await getStatusList(
+        config.IP_LIST, 
+        config.PING_TIMEOUT,
+        config.INTERNET_CHECK
+      );
+      
       const changes = detectStatusChanges(hostsStatus, currentStatusList);
 
       changes.forEach(change => {
         if (change.changed) {
+          const displayName = change.displayLabel || change.ip;
           const msg = change.type === 'online'
-            ? `${change.ip} ficou ONLINE!`
-            : `${change.ip} ficou OFFLINE!`;
-          sendNotification('Status da Rede', msg);
+            ? `${displayName} ficou ${change.isInternet ? 'CONECTADO' : 'ONLINE'}!`
+            : `${displayName} ficou ${change.isInternet ? 'DESCONECTADO' : 'OFFLINE'}!`;
+          
+          const title = change.isInternet ? 'Status da Internet' : 'Status da Rede';
+          sendNotification(title, msg);
         }
         hostsStatus[change.ip] = change.type === 'online';
       });
