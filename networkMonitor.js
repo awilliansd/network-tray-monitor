@@ -22,7 +22,7 @@ async function getStatusList(ipList, timeout = 1, internetCheck = null) {
         return { 
             ip, 
             online: res.alive,
-            isInternet,
+            isInternet: isInternet || false,
             displayLabel: isInternet ? internetCheck.label : ip
         };
     }));

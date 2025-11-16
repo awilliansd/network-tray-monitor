@@ -94,21 +94,22 @@ describe('main.js', () => {
   });
 
   test('sendNotification deve chamar Notification quando suportado', () => {
-    Notification.isSupported.mockReturnValue(true);
-    
-    const mockNotification = {
-      show: jest.fn()
-    };
-    
-    // Mock do construtor Notification
-    const NotificationMock = jest.fn(() => mockNotification);
+    // Configura o mock para este teste específico
     const electron = require('electron');
-    electron.Notification = NotificationMock;
+    electron.Notification.isSupported.mockReturnValue(true);
     
-    // Recarrega o módulo com o mock atualizado
+    const mockShow = jest.fn();
+    electron.Notification.mockImplementation(() => ({
+      show: mockShow
+    }));
+    
+    // Recarrega o módulo com os novos mocks
     jest.isolateModules(() => {
       const mainModule = require('./main');
       mainModule.sendNotification('Teste', 'Mensagem de teste');
+      
+      // Verifica se o Notification foi criado
+      expect(electron.Notification).toHaveBeenCalled();
     });
   });
 });
