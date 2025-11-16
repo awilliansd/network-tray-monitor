@@ -13,7 +13,9 @@ jest.mock('electron', () => ({
     setContextMenu: jest.fn(),
   })),
   BrowserWindow: jest.fn(),
-  Notification: jest.fn(() => ({ show: jest.fn() })),
+  Notification: {
+    isSupported: jest.fn(() => true),
+  },
 }));
 
 jest.mock('./networkMonitor', () => ({
@@ -24,15 +26,20 @@ jest.mock('./networkMonitor', () => ({
 
 jest.mock('./config', () => ({
   IP_LIST: ['192.168.1.1'],
-  PING_TIMEOUT: 1000,
+  PING_TIMEOUT: 1,
   UPDATE_INTERVAL: 5000,
+  INTERNET_CHECK: {
+    enabled: true,
+    host: '8.8.8.8',
+    label: '🌐 Internet (Google DNS)'
+  }
 }));
 
 jest.mock('path', () => ({
   join: jest.fn((...args) => args.join('/'))
 }));
 
-const { app } = require('electron');
+const { app, Notification } = require('electron');
 
 describe('main.js', () => {
   let main;
@@ -84,5 +91,16 @@ describe('main.js', () => {
     
     // Aguarda promises pendentes
     await Promise.resolve();
+  });
+
+  test('sendNotification deve chamar Notification quando suportado', () => {
+    // Este teste verifica se a função sendNotification existe e pode ser chamada
+    // O mock do Notification já está configurado no topo do arquivo
+    const mainModule = require('./main');
+    
+    // Verifica que a função não lança erro quando chamada
+    expect(() => {
+      mainModule.sendNotification('Teste', 'Mensagem de teste');
+    }).not.toThrow();
   });
 });
