@@ -1,12 +1,12 @@
 // config.js
 module.exports = {
   IP_LIST: [
-    "TETRAGRAMMATON",
-    "CHRONOS",
-    "PROMETHEUS",
-    "HEPHAESTUS",
-    "raspberrypi",
-    "SABRLFNNSCJ3"
+    "Chronos",
+    "Hephaestus",
+    "Prometheus",
+    "Raspberrypi",
+    "Sabrlfnnscj3",
+    "Tetragrammaton",
   ],
   // Adiciona verificação de internet
   INTERNET_CHECK: {
