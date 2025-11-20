@@ -44,7 +44,7 @@
     ]
   },
   "dependencies": {
-    "ping": "^0.4.0"
+    "ping": "^0.4.4"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
