@@ -1,6 +1,6 @@
 # Network Tray Monitor
 
-![Network Tray Monitor](icon.png)
+![Network Tray Monitor](app.png)
 
 Um aplicativo de monitoramento de rede em tempo real que fica na bandeja do sistema, desenvolvido com Electron. Monitora computadores específicos na rede e exibe seu status (online/offline) através de um menu contextual acessível pela bandeja do sistema.
 
