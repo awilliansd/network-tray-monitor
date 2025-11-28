@@ -1,4 +1,49 @@
 const ping = require('ping');
+const https = require('https');
+
+/**
+ * Obtém o IP externo (público)
+ * @returns {Promise<string>} IP externo ou mensagem de erro
+ */
+async function getExternalIP() {
+    return new Promise((resolve) => {
+        const options = {
+            hostname: 'api.ipify.org',
+            port: 443,
+            path: '/',
+            method: 'GET',
+            timeout: 5000
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
+
+            res.on('end', () => {
+                if (res.statusCode === 200) {
+                    resolve(data.trim());
+                } else {
+                    resolve('Erro ao obter IP');
+                }
+            });
+        });
+
+        req.on('error', (error) => {
+            console.error('Erro ao obter IP externo:', error);
+            resolve('Erro de conexão');
+        });
+
+        req.on('timeout', () => {
+            req.destroy();
+            resolve('Timeout');
+        });
+
+        req.end();
+    });
+}
 
 /**
  * Verifica o status online/offline de uma lista de IPs
@@ -92,7 +137,7 @@ function detectStatusChanges(previousStatus, currentStatusList) {
  * @param {Function} onQuit - Callback para o botão sair
  * @returns {Array} Template de itens do menu
  */
-function createMenuTemplate(statusList, onUpdate, onQuit) {
+async function createMenuTemplate(statusList, onUpdate, onQuit) {
     // Separa internet check dos demais hosts
     const internetStatus = statusList.find(s => s.isInternet);
     const hostStatuses = statusList.filter(s => !s.isInternet);
@@ -101,6 +146,23 @@ function createMenuTemplate(statusList, onUpdate, onQuit) {
         { label: '🖥️ Monitoramento de Rede', enabled: false },
         { type: 'separator' }
     ];
+    
+    // Adiciona IP externo
+    try {
+        const externalIP = await getExternalIP();
+        menuItems.push({
+            label: `🌍 IP Externo: ${externalIP}`,
+            enabled: false
+        });
+        menuItems.push({ type: 'separator' });
+    } catch (error) {
+        console.error('Erro ao obter IP externo:', error);
+        menuItems.push({
+            label: '🌍 IP Externo: Erro ao carregar',
+            enabled: false
+        });
+        menuItems.push({ type: 'separator' });
+    }
     
     // Adiciona status da internet primeiro, se existir
     if (internetStatus) {
@@ -135,6 +197,7 @@ function createMenuTemplate(statusList, onUpdate, onQuit) {
 }
 
 module.exports = {
+    getExternalIP,
     getStatusList,
     detectStatusChanges,
     createMenuTemplate

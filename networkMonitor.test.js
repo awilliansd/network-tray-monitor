@@ -6,6 +6,8 @@ jest.mock('ping');
 describe('NetworkMonitor', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Limpar todos os mocks do https
+    jest.resetModules();
   });
 
   test('getStatusList retorna status correto sem internet check', async () => {
@@ -100,7 +102,35 @@ describe('NetworkMonitor', () => {
     expect(changes[0].changed).toBe(false);
   });
 
-  test('createMenuTemplate cria menu corretamente', () => {
+  test('createMenuTemplate cria menu corretamente', async () => {
+    // Mock específico para este teste
+    jest.doMock('https', () => ({
+      request: jest.fn((options, callback) => {
+        // Simula uma resposta bem-sucedida
+        const mockResponse = {
+          statusCode: 200,
+          on: jest.fn((event, handler) => {
+            if (event === 'data') {
+              handler('123.456.789.012');
+            }
+            if (event === 'end') {
+              handler();
+            }
+          })
+        };
+        
+        callback(mockResponse);
+        
+        return {
+          on: jest.fn(),
+          end: jest.fn()
+        };
+      })
+    }), { virtual: true });
+
+    // Recarrega o módulo para usar o mock
+    const { createMenuTemplate } = require('./networkMonitor');
+
     const statusList = [
       { ip: '8.8.8.8', online: true, isInternet: true, displayLabel: '🌐 Internet' },
       { ip: 'HOST1', online: true, isInternet: false, displayLabel: 'HOST1' },
@@ -110,10 +140,15 @@ describe('NetworkMonitor', () => {
     const onUpdate = jest.fn();
     const onQuit = jest.fn();
 
-    const menu = createMenuTemplate(statusList, onUpdate, onQuit);
+    const menu = await createMenuTemplate(statusList, onUpdate, onQuit);
 
     expect(menu.length).toBeGreaterThan(0);
     expect(menu[0].label).toBe('🖥️ Monitoramento de Rede');
+    
+    // Verifica se tem o IP externo
+    const externalIPItem = menu.find(item => item.label && item.label.includes('IP Externo'));
+    expect(externalIPItem).toBeDefined();
+    expect(externalIPItem.label).toContain('123.456.789.012');
     
     // Verifica se tem o item da internet
     const internetItem = menu.find(item => item.label && item.label.includes('Internet'));
@@ -122,5 +157,41 @@ describe('NetworkMonitor', () => {
     // Verifica se tem os hosts
     const host1Item = menu.find(item => item.label && item.label.includes('HOST1'));
     expect(host1Item).toBeDefined();
+  });
+
+  test('createMenuTemplate lida com erro ao obter IP externo', async () => {
+    // Mock específico para simular erro
+    jest.doMock('https', () => ({
+      request: jest.fn(() => {
+        return {
+          on: jest.fn((event, handler) => {
+            if (event === 'error') {
+              handler(new Error('Erro de conexão'));
+            }
+          }),
+          end: jest.fn()
+        };
+      })
+    }), { virtual: true });
+
+    // Recarrega o módulo para usar o mock
+    const { createMenuTemplate } = require('./networkMonitor');
+
+    const statusList = [
+      { ip: 'HOST1', online: true, isInternet: false, displayLabel: 'HOST1' }
+    ];
+
+    const onUpdate = jest.fn();
+    const onQuit = jest.fn();
+
+    const menu = await createMenuTemplate(statusList, onUpdate, onQuit);
+
+    // Verifica se o menu ainda é criado mesmo com erro
+    expect(menu.length).toBeGreaterThan(0);
+    
+    // Verifica se tem a mensagem de erro para o IP externo
+    const externalIPItem = menu.find(item => item.label && item.label.includes('IP Externo'));
+    expect(externalIPItem).toBeDefined();
+    expect(externalIPItem.label).toContain('Erro');
   });
 });

@@ -55,11 +55,11 @@ function startApp() {
   async function updateMenu() {
     try {
       const currentStatusList = await getStatusList(
-        config.IP_LIST, 
+        config.IP_LIST,
         config.PING_TIMEOUT,
         config.INTERNET_CHECK
       );
-      
+
       const changes = detectStatusChanges(hostsStatus, currentStatusList);
 
       changes.forEach(change => {
@@ -68,18 +68,19 @@ function startApp() {
           const msg = change.type === 'online'
             ? `${displayName} ficou ${change.isInternet ? 'CONECTADO' : 'ONLINE'}!`
             : `${displayName} ficou ${change.isInternet ? 'DESCONECTADO' : 'OFFLINE'}!`;
-          
+
           const title = change.isInternet ? 'Status da Internet' : 'Status da Rede';
           sendNotification(title, msg);
         }
         hostsStatus[change.ip] = change.type === 'online';
       });
 
+      // Modifique esta linha para usar await
       const menu = Menu.buildFromTemplate(
-        createMenuTemplate(currentStatusList, () => updateMenu(), () => app.quit())
+        await createMenuTemplate(currentStatusList, () => updateMenu(), () => app.quit())
       );
       tray.setContextMenu(menu);
-      
+
     } catch (error) {
       console.error('Erro ao atualizar menu:', error);
       const fallbackMenu = Menu.buildFromTemplate([
@@ -93,13 +94,13 @@ function startApp() {
 
   app.whenReady().then(() => {
     const iconPath = getIconPath();
-    
+
     // Janela oculta
-    new BrowserWindow({ 
-      show: false, 
-      icon: iconPath 
+    new BrowserWindow({
+      show: false,
+      icon: iconPath
     });
-    
+
     // Tray
     tray = new Tray(iconPath);
     tray.setToolTip('Monitoramento de Rede');
@@ -110,10 +111,10 @@ function startApp() {
       { label: 'Sair', click: () => app.quit() }
     ]);
     tray.setContextMenu(loadingMenu);
-    
+
     // Primeira atualização após breve delay
     setTimeout(updateMenu, 1000);
-    
+
     // Intervalo de atualização
     setInterval(updateMenu, config.UPDATE_INTERVAL);
   });
