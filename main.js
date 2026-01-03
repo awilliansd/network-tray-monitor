@@ -8,9 +8,15 @@ let tray = null;
 let hostsStatus = {};
 
 function getIconPath() {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, 'icons', 'app.ico')
-    : path.join(__dirname, 'icons', 'app.ico');
+  if (process.platform === 'linux') {
+    return app.isPackaged
+      ? path.join(process.resourcesPath, 'icons', 'app-2.png')
+      : path.join(__dirname, 'icons', 'app-2.png');
+  } else {
+    return app.isPackaged
+      ? path.join(process.resourcesPath, 'icons', 'app.ico')
+      : path.join(__dirname, 'icons', 'app.ico');
+  }
 }
 
 function sendNotification(title, body, customTray = null) {
