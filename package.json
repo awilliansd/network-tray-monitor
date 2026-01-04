@@ -5,7 +5,9 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "predist": "npm run generate-icons",
     "dist": "electron-builder",
+    "generate-icons": "node scripts/generate-icons.js",
     "test": "jest"
   },
   "build": {
@@ -22,6 +24,18 @@
       "target": "nsis",
       "icon": "icons/app.ico",
       "verifyUpdateCodeSignature": false
+    },
+    "linux": {
+      "target": ["deb"],
+      "icon": "icons/app-2.png",
+      "category": "Network",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "Network Tray Monitor"
+        }
+      },
+      "executableName": "network-tray-monitor",
+      "maintainer": "Alessandro Willian <awilliansd@protonmail.com>"
     },
     "nsis": {
       "oneClick": false,
@@ -50,6 +64,7 @@
     "electron": "^39.2.3",
     "electron-builder": "^26.0.12",
     "jest": "^30.2.0",
-    "jest-environment-jsdom": "^30.2.0"
+    "jest-environment-jsdom": "^30.2.0",
+    "sharp": "^0.32.1"
   }
 }

@@ -8,9 +8,15 @@ let tray = null;
 let hostsStatus = {};
 
 function getIconPath() {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, 'icons', 'app.ico')
-    : path.join(__dirname, 'icons', 'app.ico');
+  if (process.platform === 'linux') {
+    return app.isPackaged
+      ? path.join(process.resourcesPath, 'icons', 'app-2.png')
+      : path.join(__dirname, 'icons', 'app-2.png');
+  } else {
+    return app.isPackaged
+      ? path.join(process.resourcesPath, 'icons', 'app.ico')
+      : path.join(__dirname, 'icons', 'app.ico');
+  }
 }
 
 function sendNotification(title, body, customTray = null) {
@@ -54,8 +60,14 @@ function startApp() {
 
   async function updateMenu() {
     try {
+      // Modifica a lista de IPs para Linux (adiciona .local para mDNS)
+      let ipList = [...config.IP_LIST];
+      if (process.platform === 'linux') {
+        ipList = ipList.map(ip => ip === 'Raspberrypi' ? 'raspberrypi.local' : ip);
+      }
+
       const currentStatusList = await getStatusList(
-        config.IP_LIST,
+        ipList,
         config.PING_TIMEOUT,
         config.INTERNET_CHECK
       );
