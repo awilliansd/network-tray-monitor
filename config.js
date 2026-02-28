@@ -2,6 +2,7 @@
 module.exports = {
   IP_LIST: [
     "Chronos",
+    "Raspberrypi",
     "Sabrlfnnscj3",
     "Tetragrammaton",
   ],
