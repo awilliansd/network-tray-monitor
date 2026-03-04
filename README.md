@@ -8,10 +8,12 @@ Um aplicativo de monitoramento de rede em tempo real que fica na bandeja do sist
 
 - **Monitoramento em tempo real**: Verifica o status de conectividade dos computadores configurados
 - **Interface na bandeja**: Fica discretamente na bandeja do sistema
-- **Atualização automática**: Verifica o status a cada 5 minutos automaticamente
+- **Atualização automática**: Verifica o status a cada 2 minutos automaticamente
 - **Atualização manual**: Permite atualizar o status instantaneamente através do menu
 - **Interface amigável**: Menu contextual com emojis e indicadores visuais claros
-- **Multiplataforma**: Funciona no Windows (com instalador NSIS)
+- **Verificação de Internet**: Verifica a conectividade com a internet
+- **Exibição de IP Externo**: Mostra o IP externo do usuário
+- **Multiplataforma**: Funciona no Windows (com instalador NSIS) e Linux
 
 ## 📋 Pré-requisitos
 
@@ -70,6 +72,8 @@ O instalador será gerado na pasta `dist/` com o arquivo `.exe` para instalaçã
 ### Menu de Opções
 
 - **🖥️ Monitoramento de Rede**: Título informativo
+- **🌍 IP Externo**: Mostra o IP externo do usuário
+- **🌐 Internet (Google DNS)**: Mostra o status da conexão com a internet
 - **Lista de computadores**: Mostra o status atual de cada máquina
 - **⟳ Atualizar agora**: Força uma verificação imediata do status
 - **🛑 Sair**: Fecha o aplicativo
@@ -90,12 +94,20 @@ const IP_LIST = [
 
 ### Alterando Intervalo de Atualização
 
-Por padrão, o aplicativo verifica o status a cada 5 minutos. Para alterar isso, modifique o valor em `main.js`:
+Por padrão, o aplicativo verifica o status a cada 2 minutos. Para alterar isso, modifique o valor em `main.js`:
 
 ```javascript
-setInterval(updateMenu, 300000); // 300000ms = 5 minutos
+setInterval(updateMenu, 120000); // 120000ms = 2 minutos
 // Para 1 minuto: 60000
-// Para 10 minutos: 600000
+// Para 5 minutos: 300000
+```
+
+### Configuração da Verificação de Internet
+
+Para habilitar/desabilitar a verificação de internet, modifique o valor em `main.js`:
+
+```javascript
+const CHECK_INTERNET = true; // true para habilitar, false para desabilitar
 ```
 
 ### Timeout de Ping
@@ -112,9 +124,13 @@ const res = await ping.promise.probe(ip, { timeout: 5 }); // 5 segundos
 network-tray-monitor/
 ├── main.js              # Arquivo principal do Electron
 ├── package.json         # Configurações do projeto e dependências
+├── config.js            # Configurações do aplicativo
 ├── icons/
 │   ├── app.ico         # Ícone em formato ICO
-│   └── app.png         # Ícone em formato PNG
+│   ├── app.png         # Ícone em formato PNG
+│   └── hicolor/        # Ícones para Linux (temas hicolor)
+├── scripts/
+│   └── generate-icons.js # Script para gerar ícones em diferentes tamanhos
 ├── dist/               # Pasta gerada com os builds
 └── README.md           # Esta documentação
 ```
@@ -169,14 +185,6 @@ Se você encontrar algum problema ou tiver sugestões, por favor:
 1. Verifique se o problema já foi reportado nas [Issues](../../issues)
 2. Se não, crie uma nova issue com detalhes do problema
 3. Inclua informações sobre seu sistema operacional e versão do Node.js
-
-## 🔄 Versões
-
-### v1.0.0
-- Monitoramento básico de computadores na rede
-- Interface na bandeja do sistema
-- Atualização automática a cada 5 minutos
-- Instalador para Windows
 
 ---
 
