@@ -135,9 +135,17 @@ function detectStatusChanges(previousStatus, currentStatusList) {
  * @param {Array} statusList - Lista de status [{ip, online, isInternet, displayLabel}]
  * @param {Function} onUpdate - Callback para o botão atualizar
  * @param {Function} onQuit - Callback para o botão sair
+ * @param {Object} updateOptions - Opções de atualização
  * @returns {Array} Template de itens do menu
  */
-async function createMenuTemplate(statusList, onUpdate, onQuit) {
+async function createMenuTemplate(statusList, onUpdate, onQuit, updateOptions = {}) {
+    const {
+        updateStatusLabel = 'Inativo',
+        onCheckForUpdates = null,
+        onInstallUpdate = null,
+        canInstallUpdate = false
+    } = updateOptions;
+
     // Separa internet check dos demais hosts
     const internetStatus = statusList.find(s => s.isInternet);
     const hostStatuses = statusList.filter(s => !s.isInternet);
@@ -181,10 +189,28 @@ async function createMenuTemplate(statusList, onUpdate, onQuit) {
         });
     });
     
+    menuItems.push({ type: 'separator' });
+    menuItems.push({
+        label: `🔄 Atualizações: ${updateStatusLabel}`,
+        enabled: false
+    });
+    menuItems.push({
+        label: '⬇️ Verificar atualizações agora',
+        click: onCheckForUpdates,
+        enabled: typeof onCheckForUpdates === 'function'
+    });
+
+    if (canInstallUpdate && typeof onInstallUpdate === 'function') {
+        menuItems.push({
+            label: '⚡ Atualizar agora',
+            click: onInstallUpdate
+        });
+    }
+
     menuItems.push(
         { type: 'separator' },
         {
-            label: '⟳ Atualizar agora',
+            label: '⟳ Atualizar monitoramento agora',
             click: onUpdate
         },
         {

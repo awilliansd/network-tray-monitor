@@ -13,7 +13,8 @@ Um aplicativo de monitoramento de rede em tempo real que fica na bandeja do sist
 - **Interface amigável**: Menu contextual com emojis e indicadores visuais claros
 - **Verificação de Internet**: Verifica a conectividade com a internet
 - **Exibição de IP Externo**: Mostra o IP externo do usuário
-- **Multiplataforma**: Funciona no Windows (com instalador NSIS) e Linux
+- **Multiplataforma**: Funciona no Windows (NSIS) e Linux (AppImage)
+- **Auto-update**: Atualização automática via GitHub Releases para builds instalados
 
 ## 📋 Pré-requisitos
 
@@ -58,7 +59,9 @@ Para gerar o instalador do aplicativo:
 npm run dist
 ```
 
-O instalador será gerado na pasta `dist/` com o arquivo `.exe` para instalação no Windows.
+Os artefatos serão gerados na pasta `dist/`:
+- Windows: instalador `.exe` (NSIS)
+- Linux: `.AppImage`
 
 ## 🖥️ Como Usar
 

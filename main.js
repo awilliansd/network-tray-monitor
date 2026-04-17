@@ -1,11 +1,26 @@
 // main.js
 const { app, Menu, Tray, BrowserWindow, Notification } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { getStatusList, detectStatusChanges, createMenuTemplate } = require('./networkMonitor');
 const config = require('./config');
 
 let tray = null;
 let hostsStatus = {};
+let isMenuUpdating = false;
+let hasPendingMenuUpdate = false;
+let refreshMenuFn = null;
+let updaterInitialized = false;
+let isCheckingForUpdates = false;
+let isInstallingUpdate = false;
+let isUpdateDownloaded = false;
+let updateState = {
+  label: 'Aguardando verificação',
+  lastError: null
+};
+
+const INITIAL_UPDATE_CHECK_DELAY_MS = 15000;
+const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 
 function getIconPath() {
   if (process.platform === 'linux') {
@@ -19,7 +34,7 @@ function getIconPath() {
   }
 }
 
-function sendNotification(title, body, customTray = null) {
+function sendNotification(title, body, customTray = null, onClick = null) {
   const supported = Notification.isSupported();
 
   if (supported) {
@@ -29,6 +44,9 @@ function sendNotification(title, body, customTray = null) {
         body,
         icon: getIconPath(),
       });
+      if (typeof onClick === 'function') {
+        n.on('click', onClick);
+      }
       n.show();
     } catch (e) {
       console.error('[sendNotification] erro ao criar notificação:', e);
@@ -46,6 +64,130 @@ function sendNotification(title, body, customTray = null) {
   }
 }
 
+function setUpdateStatus(label, lastError = null) {
+  updateState = {
+    label,
+    lastError
+  };
+}
+
+function refreshMenuIfPossible() {
+  if (typeof refreshMenuFn === 'function') {
+    refreshMenuFn();
+  }
+}
+
+function canUseAutoUpdater() {
+  if (!app.isPackaged) return false;
+  if (process.platform !== 'linux') return true;
+  return Boolean(process.env.APPIMAGE);
+}
+
+function installDownloadedUpdate() {
+  if (!isUpdateDownloaded || isInstallingUpdate) return;
+  isInstallingUpdate = true;
+  setUpdateStatus('Instalando atualização...');
+  refreshMenuIfPossible();
+
+  setTimeout(() => {
+    try {
+      autoUpdater.quitAndInstall(false, true);
+    } catch (error) {
+      console.error('[autoUpdater] erro ao instalar atualização:', error);
+      isInstallingUpdate = false;
+      setUpdateStatus('Erro ao instalar atualização', error);
+      refreshMenuIfPossible();
+    }
+  }, 250);
+}
+
+async function checkForUpdates(manual = false) {
+  if (!canUseAutoUpdater()) {
+    setUpdateStatus('Atualização automática indisponível neste modo');
+    refreshMenuIfPossible();
+    if (manual) {
+      sendNotification(
+        'Atualizações',
+        'Auto-update disponível apenas no app instalado (Linux requer AppImage).'
+      );
+    }
+    return;
+  }
+
+  if (isCheckingForUpdates) {
+    if (manual) {
+      sendNotification('Atualizações', 'Já existe uma verificação em andamento.');
+    }
+    return;
+  }
+
+  try {
+    isCheckingForUpdates = true;
+    await autoUpdater.checkForUpdates();
+  } catch (error) {
+    console.error('[autoUpdater] erro ao verificar atualização:', error);
+    isCheckingForUpdates = false;
+    setUpdateStatus('Erro ao verificar atualização', error);
+    refreshMenuIfPossible();
+    if (manual) {
+      sendNotification('Atualizações', 'Não foi possível verificar atualizações.');
+    }
+  }
+}
+
+function initializeAutoUpdater() {
+  if (updaterInitialized) return;
+  updaterInitialized = true;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = false;
+
+  autoUpdater.on('checking-for-update', () => {
+    isCheckingForUpdates = true;
+    setUpdateStatus('Verificando atualizações...');
+    refreshMenuIfPossible();
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    setUpdateStatus(`Nova versão ${info.version} encontrada. Baixando...`);
+    refreshMenuIfPossible();
+    sendNotification('Atualização disponível', `Versão ${info.version} encontrada. Download iniciado.`);
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    isCheckingForUpdates = false;
+    isUpdateDownloaded = false;
+    setUpdateStatus('Aplicativo atualizado');
+    refreshMenuIfPossible();
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    const percent = Math.round(progress.percent || 0);
+    setUpdateStatus(`Baixando atualização... ${percent}%`);
+    refreshMenuIfPossible();
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    isCheckingForUpdates = false;
+    isUpdateDownloaded = true;
+    setUpdateStatus(`Atualização pronta (${info.version})`);
+    refreshMenuIfPossible();
+    sendNotification(
+      'Atualização pronta',
+      `Versão ${info.version} baixada. Abra o menu da bandeja e clique em "Atualizar agora".`,
+      null,
+      installDownloadedUpdate
+    );
+  });
+
+  autoUpdater.on('error', (error) => {
+    console.error('[autoUpdater] erro:', error);
+    isCheckingForUpdates = false;
+    setUpdateStatus('Erro no auto-update', error);
+    refreshMenuIfPossible();
+  });
+}
+
 function startApp() {
   const gotTheLock = app.requestSingleInstanceLock();
 
@@ -59,6 +201,15 @@ function startApp() {
   });
 
   async function updateMenu() {
+    if (!tray) return;
+
+    if (isMenuUpdating) {
+      hasPendingMenuUpdate = true;
+      return;
+    }
+
+    isMenuUpdating = true;
+
     try {
       // Modifica a lista de IPs para Linux (adiciona .local para mDNS)
       let ipList = [...config.IP_LIST];
@@ -89,7 +240,17 @@ function startApp() {
 
       // Modifique esta linha para usar await
       const menu = Menu.buildFromTemplate(
-        await createMenuTemplate(currentStatusList, () => updateMenu(), () => app.quit())
+        await createMenuTemplate(
+          currentStatusList,
+          () => updateMenu(),
+          () => app.quit(),
+          {
+            updateStatusLabel: updateState.label,
+            onCheckForUpdates: () => checkForUpdates(true),
+            onInstallUpdate: () => installDownloadedUpdate(),
+            canInstallUpdate: isUpdateDownloaded
+          }
+        )
       );
       tray.setContextMenu(menu);
 
@@ -101,8 +262,16 @@ function startApp() {
         { label: 'Sair', click: () => app.quit() }
       ]);
       if (tray) tray.setContextMenu(fallbackMenu);
+    } finally {
+      isMenuUpdating = false;
+      if (hasPendingMenuUpdate) {
+        hasPendingMenuUpdate = false;
+        updateMenu();
+      }
     }
   }
+
+  refreshMenuFn = () => updateMenu();
 
   app.whenReady().then(() => {
     const iconPath = getIconPath();
@@ -124,11 +293,24 @@ function startApp() {
     ]);
     tray.setContextMenu(loadingMenu);
 
+    initializeAutoUpdater();
+
+    if (!canUseAutoUpdater()) {
+      setUpdateStatus('Auto-update indisponível neste ambiente');
+    } else {
+      setUpdateStatus('Aguardando verificação');
+    }
+
     // Primeira atualização após breve delay
     setTimeout(updateMenu, 1000);
 
     // Intervalo de atualização
     setInterval(updateMenu, config.UPDATE_INTERVAL);
+
+    if (process.env.NODE_ENV !== 'test') {
+      setTimeout(() => checkForUpdates(false), INITIAL_UPDATE_CHECK_DELAY_MS);
+      setInterval(() => checkForUpdates(false), UPDATE_CHECK_INTERVAL_MS);
+    }
   });
 
   app.on('window-all-closed', e => e.preventDefault());
