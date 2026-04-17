@@ -18,6 +18,16 @@ jest.mock('electron', () => ({
   },
 }));
 
+jest.mock('electron-updater', () => ({
+  autoUpdater: {
+    autoDownload: true,
+    autoInstallOnAppQuit: false,
+    on: jest.fn(),
+    checkForUpdates: jest.fn(() => Promise.resolve()),
+    quitAndInstall: jest.fn(),
+  }
+}));
+
 jest.mock('./networkMonitor', () => ({
   getStatusList: jest.fn().mockResolvedValue([]),
   detectStatusChanges: jest.fn().mockReturnValue([]),

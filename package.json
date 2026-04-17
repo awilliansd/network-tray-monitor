@@ -1,12 +1,13 @@
 {
   "name": "network-tray-monitor",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Monitoramento de computadores na rede via bandeja do sistema",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "predist": "npm run generate-icons",
     "dist": "electron-builder",
+    "dist:publish": "electron-builder --publish always",
     "generate-icons": "node scripts/generate-icons.js",
     "test": "jest"
   },
@@ -27,7 +28,7 @@
     },
     "linux": {
       "target": [
-        "deb"
+        "AppImage"
       ],
       "icon": "icons/app-2.png",
       "category": "Network",
@@ -39,6 +40,13 @@
       "executableName": "network-tray-monitor",
       "maintainer": "Alessandro Willian <awilliansd@protonmail.com>"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "awilliansd",
+        "repo": "network-tray-monitor"
+      }
+    ],
     "nsis": {
       "oneClick": false,
       "perMachine": false,
@@ -59,6 +67,7 @@
     ]
   },
   "dependencies": {
+    "electron-updater": "^6.6.2",
     "ping": "^1.0.0"
   },
   "devDependencies": {
