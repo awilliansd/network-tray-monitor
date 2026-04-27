@@ -140,7 +140,7 @@ function initializeAutoUpdater() {
   updaterInitialized = true;
 
   autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.autoInstallOnAppQuit = true;
 
   autoUpdater.on('checking-for-update', () => {
     isCheckingForUpdates = true;
@@ -170,14 +170,16 @@ function initializeAutoUpdater() {
   autoUpdater.on('update-downloaded', (info) => {
     isCheckingForUpdates = false;
     isUpdateDownloaded = true;
-    setUpdateStatus(`Atualização pronta (${info.version})`);
+    setUpdateStatus(`Atualização pronta (${info.version}) — instalando em 10s...`);
     refreshMenuIfPossible();
     sendNotification(
       'Atualização pronta',
-      `Versão ${info.version} baixada. Abra o menu da bandeja e clique em "Atualizar agora".`,
+      `Versão ${info.version} baixada. O app será reiniciado em 10 segundos para instalar.`,
       null,
       installDownloadedUpdate
     );
+    // Auto-instala após 10 segundos
+    setTimeout(() => installDownloadedUpdate(), 10000);
   });
 
   autoUpdater.on('error', (error) => {
