@@ -9,13 +9,35 @@ permissions:
   contents: write
 
 jobs:
-  publish:
-    name: Publish (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
+  publish-linux:
+    name: Publish (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build and publish release
+        run: npm run dist:publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-windows:
+    name: Publish (Windows)
+    needs: publish-linux
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
