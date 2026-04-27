@@ -190,22 +190,40 @@ async function createMenuTemplate(statusList, onUpdate, onQuit, updateOptions = 
     });
     
     menuItems.push({ type: 'separator' });
-    menuItems.push({
-        label: `🔄 Atualizações: ${updateStatusLabel}`,
-        enabled: false
-    });
-    menuItems.push({
-        label: '⬇️ Verificar atualizações agora',
-        click: onCheckForUpdates,
-        enabled: typeof onCheckForUpdates === 'function'
-    });
 
-    if (canInstallUpdate && typeof onInstallUpdate === 'function') {
-        menuItems.push({
-            label: '⚡ Atualizar agora',
-            click: onInstallUpdate
-        });
+    // Botão único de atualização — muda conforme o estado
+    const busyPatterns = ['Verificando', 'Baixando', 'Instalando'];
+    const isBusy = busyPatterns.some(p => updateStatusLabel.startsWith(p));
+    const isUnavailable = updateStatusLabel.includes('indisponível') || updateStatusLabel.includes('indisponivel');
+
+    let updateButtonLabel;
+    let updateButtonClick = null;
+    let updateButtonEnabled = false;
+
+    if (canInstallUpdate && typeof onInstallUpdate === 'function' && !isBusy) {
+        updateButtonLabel = `⚡ Instalar atualização`;
+        updateButtonClick = onInstallUpdate;
+        updateButtonEnabled = true;
+    } else if (isBusy) {
+        updateButtonLabel = `🔄 ${updateStatusLabel}`;
+        updateButtonEnabled = false;
+    } else if (isUnavailable) {
+        updateButtonLabel = '🔄 Verificação indisponível';
+        updateButtonEnabled = false;
+    } else if (typeof onCheckForUpdates === 'function') {
+        updateButtonLabel = '🔄 Verificar atualizações';
+        updateButtonClick = onCheckForUpdates;
+        updateButtonEnabled = true;
+    } else {
+        updateButtonLabel = '🔄 Verificação indisponível';
+        updateButtonEnabled = false;
     }
+
+    menuItems.push({
+        label: updateButtonLabel,
+        click: updateButtonClick,
+        enabled: updateButtonEnabled
+    });
 
     menuItems.push(
         { type: 'separator' },
