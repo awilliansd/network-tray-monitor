@@ -55,7 +55,11 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Build and publish release
-        run: npm run dist:publish
+      - name: Build
+        run: npm run dist
+
+      - name: Upload Windows artifacts to release
+        run: |
+          gh release upload ${{ github.ref_name }} dist/*.exe dist/*.blockmap --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
