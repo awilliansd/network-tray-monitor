@@ -56,7 +56,7 @@ jobs:
         run: npm test
 
       - name: Build
-        run: npm run dist
+        run: npx electron-builder --publish never
 
       - name: Upload Windows artifacts to release
         run: |
