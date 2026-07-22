@@ -1,8 +1,12 @@
 {
   "name": "network-tray-monitor",
-  "version": "1.0.23",
+  "version": "2.2.0",
   "description": "Monitoramento de computadores na rede via bandeja do sistema",
   "main": "main.js",
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
   "scripts": {
     "start": "electron .",
     "predist": "npm run generate-icons",
@@ -16,7 +20,11 @@
     "productName": "Network Tray Monitor",
     "icon": "icons/app.ico",
     "files": [
-      "**/*"
+      "main.js",
+      "config.js",
+      "networkMonitor.js",
+      "modules/**/*.js",
+      "package.json"
     ],
     "directories": {
       "output": "dist"
@@ -68,15 +76,13 @@
     ]
   },
   "dependencies": {
-    "electron-updater": "^6.6.2",
+    "electron-updater": "^6.8.9",
     "ping": "^1.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "electron": "^39.7.0",
-    "electron-builder": "^26.0.12",
-    "jest": "^30.2.0",
-    "jest-environment-jsdom": "^30.3.0",
-    "sharp": "^0.32.1"
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "jest": "^30.4.2",
+    "sharp": "^0.35.3"
   }
 }
