@@ -1,12 +1,12 @@
 module.exports = {
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     '**/*.js',
     '!node_modules/**',
     '!coverage/**',
     '!icons/**',
-    '!main.js' // Exclui o arquivo principal se não quiser coverage dele
+    '!main.js'
   ],
   testMatch: [
     '**/__tests__/**/*.js',
@@ -25,10 +25,5 @@ module.exports = {
   detectOpenHandles: true,
   clearMocks: true,
   resetMocks: true,
-  restoreMocks: true,
-  globals: {
-    'ts-jest': {
-      isolatedModules: true
-    }
-  }
+  restoreMocks: true
 };
