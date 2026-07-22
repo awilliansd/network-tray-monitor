@@ -25,9 +25,10 @@ jobs:
 
       # 2. Configura o ambiente Node.js
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18' # Você pode ajustar para a versão que utiliza no seu projeto
+          node-version: '22'
+          cache: npm
 
       # 3. Instala as dependências do projeto
       - name: Install dependencies
