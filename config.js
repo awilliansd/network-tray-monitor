@@ -4,6 +4,7 @@ module.exports = {
     "Raspberrypi",
     "Sabrlfnnscj3",
     "Tetragrammaton",
+    "Helix",
   ],
   INTERNET_CHECK: {
     enabled: true,
