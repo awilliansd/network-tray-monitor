@@ -1,6 +1,6 @@
 {
   "name": "network-tray-monitor",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Monitoramento de computadores na rede via bandeja do sistema",
   "main": "main.js",
   "engines": {
@@ -32,7 +32,8 @@
     "win": {
       "target": "nsis",
       "icon": "icons/app.ico",
-      "verifyUpdateCodeSignature": false
+      "verifyUpdateCodeSignature": false,
+      "artifactName": "network-tray-monitor-setup-${version}.${ext}"
     },
     "linux": {
       "target": [
@@ -76,11 +77,12 @@
     ]
   },
   "dependencies": {
+    "electron-log": "^5.4.4",
     "electron-updater": "^6.8.9",
     "ping": "^1.0.0"
   },
   "devDependencies": {
-    "electron": "^43.2.0",
+    "electron": "^44.0.0",
     "electron-builder": "^26.15.3",
     "jest": "^30.4.2",
     "sharp": "^0.35.3"

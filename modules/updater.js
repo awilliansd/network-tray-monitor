@@ -1,4 +1,5 @@
 const { autoUpdater } = require('electron-updater');
+const electronLog = require('electron-log');
 
 class UpdaterManager {
   constructor(options) {
@@ -67,6 +68,8 @@ class UpdaterManager {
 
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.logger = electronLog;
+    electronLog.transports.file.level = 'info';
 
     autoUpdater.on('checking-for-update', () => {
       this.isCheckingForUpdates = true;
