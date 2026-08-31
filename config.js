@@ -1,10 +1,10 @@
 module.exports = {
   IP_LIST: [
     "Chronos",
+    "Helix",
     "Raspberrypi",
     "Sabrlfnnscj3",
     "Tetragrammaton",
-    "Helix",
   ],
   INTERNET_CHECK: {
     enabled: true,
