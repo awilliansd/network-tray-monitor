@@ -195,7 +195,7 @@ async function createMenuTemplate(statusList, onUpdate, onQuit, updateOptions = 
     // Adiciona status da internet primeiro, se existir
     if (internetStatus) {
         menuItems.push({
-            label: `${internetStatus.displayLabel} — ${internetStatus.online ? '✅ Conectado' : '❌ Sem conexão'}`,
+            label: `${internetStatus.displayLabel} — ${internetStatus.online ? '✅ Online' : '❌ Offline'}`,
             enabled: false
         });
         menuItems.push({ type: 'separator' });

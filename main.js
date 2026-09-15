@@ -82,8 +82,8 @@ function startApp() {
           const displayName = change.displayLabel || change.ip;
           const isService = change.isService;
           const msg = change.type === 'online'
-            ? `${displayName} ficou ${change.isInternet ? 'CONECTADO' : 'ONLINE'}!`
-            : `${displayName} ficou ${change.isInternet ? 'DESCONECTADO' : 'OFFLINE'}!`;
+            ? `${displayName} ficou ONLINE!`
+            : `${displayName} ficou OFFLINE!`;
 
           const title = isService
             ? 'Status do Serviço'
