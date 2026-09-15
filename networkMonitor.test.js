@@ -18,8 +18,8 @@ describe('NetworkMonitor', () => {
     const result = await getStatusList(['HOST1', 'HOST2']);
 
     expect(result).toEqual([
-      { ip: 'HOST1', online: true, isInternet: false, displayLabel: 'HOST1' },
-      { ip: 'HOST2', online: false, isInternet: false, displayLabel: 'HOST2' }
+      { ip: 'HOST1', online: true, isInternet: false, isService: false, displayLabel: 'HOST1' },
+      { ip: 'HOST2', online: false, isInternet: false, isService: false, displayLabel: 'HOST2' }
     ]);
   });
 
@@ -38,9 +38,36 @@ describe('NetworkMonitor', () => {
     const result = await getStatusList(['HOST1', 'HOST2'], 1, internetCheck);
 
     expect(result).toEqual([
-      { ip: '8.8.8.8', online: true, isInternet: true, displayLabel: '🌐 Internet' },
-      { ip: 'HOST1', online: true, isInternet: false, displayLabel: 'HOST1' },
-      { ip: 'HOST2', online: false, isInternet: false, displayLabel: 'HOST2' }
+      { ip: '8.8.8.8', online: true, isInternet: true, isService: false, displayLabel: '🌐 Internet' },
+      { ip: 'HOST1', online: true, isInternet: false, isService: false, displayLabel: 'HOST1' },
+      { ip: 'HOST2', online: false, isInternet: false, isService: false, displayLabel: 'HOST2' }
+    ]);
+  });
+
+  test('getStatusList retorna status correto com service checks', async () => {
+    ping.promise.probe = jest.fn()
+      .mockResolvedValueOnce({ alive: true }) // Internet
+      .mockResolvedValueOnce({ alive: true }) // HOST1
+      .mockResolvedValueOnce({ alive: false }) // HOST2
+      .mockResolvedValueOnce({ alive: true }); // api.ferdium.org
+
+    const internetCheck = {
+      enabled: true,
+      host: '8.8.8.8',
+      label: '🌐 Internet'
+    };
+
+    const serviceChecks = [
+      { host: 'api.ferdium.org', label: '💬 Ferdium API' }
+    ];
+
+    const result = await getStatusList(['HOST1', 'HOST2'], 1, internetCheck, serviceChecks);
+
+    expect(result).toEqual([
+      { ip: '8.8.8.8', online: true, isInternet: true, isService: false, displayLabel: '🌐 Internet' },
+      { ip: 'HOST1', online: true, isInternet: false, isService: false, displayLabel: 'HOST1' },
+      { ip: 'HOST2', online: false, isInternet: false, isService: false, displayLabel: 'HOST2' },
+      { ip: 'api.ferdium.org', online: true, isInternet: false, isService: true, displayLabel: '💬 Ferdium API' }
     ]);
   });
 
@@ -61,6 +88,7 @@ describe('NetworkMonitor', () => {
         type: 'online', 
         changed: true, 
         isInternet: false, 
+        isService: false, 
         displayLabel: 'HOST1' 
       }
     ]);
@@ -83,6 +111,7 @@ describe('NetworkMonitor', () => {
         type: 'offline', 
         changed: true, 
         isInternet: false, 
+        isService: false, 
         displayLabel: 'HOST1' 
       }
     ]);
@@ -132,9 +161,10 @@ describe('NetworkMonitor', () => {
     const { createMenuTemplate } = require('./networkMonitor');
 
     const statusList = [
-      { ip: '8.8.8.8', online: true, isInternet: true, displayLabel: '🌐 Internet' },
-      { ip: 'HOST1', online: true, isInternet: false, displayLabel: 'HOST1' },
-      { ip: 'HOST2', online: false, isInternet: false, displayLabel: 'HOST2' }
+      { ip: '8.8.8.8', online: true, isInternet: true, isService: false, displayLabel: '🌐 Internet' },
+      { ip: 'api.ferdium.org', online: true, isInternet: false, isService: true, displayLabel: '💬 Ferdium API' },
+      { ip: 'HOST1', online: true, isInternet: false, isService: false, displayLabel: 'HOST1' },
+      { ip: 'HOST2', online: false, isInternet: false, isService: false, displayLabel: 'HOST2' }
     ];
 
     const onUpdate = jest.fn();
@@ -153,6 +183,11 @@ describe('NetworkMonitor', () => {
     // Verifica se tem o item da internet
     const internetItem = menu.find(item => item.label && item.label.includes('Internet'));
     expect(internetItem).toBeDefined();
+    
+    // Verifica se tem o item do serviço
+    const serviceItem = menu.find(item => item.label && item.label.includes('Ferdium API'));
+    expect(serviceItem).toBeDefined();
+    expect(serviceItem.label).toContain('Online');
     
     // Verifica se tem os hosts
     const host1Item = menu.find(item => item.label && item.label.includes('HOST1'));

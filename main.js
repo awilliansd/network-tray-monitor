@@ -71,7 +71,8 @@ function startApp() {
       const currentStatusList = await getStatusList(
         ipList,
         config.PING_TIMEOUT,
-        config.INTERNET_CHECK
+        config.INTERNET_CHECK,
+        config.SERVICE_CHECKS || []
       );
 
       const changes = detectStatusChanges(hostsStatus, currentStatusList);
@@ -79,11 +80,14 @@ function startApp() {
       changes.forEach(change => {
         if (change.changed) {
           const displayName = change.displayLabel || change.ip;
+          const isService = change.isService;
           const msg = change.type === 'online'
             ? `${displayName} ficou ${change.isInternet ? 'CONECTADO' : 'ONLINE'}!`
             : `${displayName} ficou ${change.isInternet ? 'DESCONECTADO' : 'OFFLINE'}!`;
 
-          const title = change.isInternet ? 'Status da Internet' : 'Status da Rede';
+          const title = isService
+            ? 'Status do Serviço'
+            : (change.isInternet ? 'Status da Internet' : 'Status da Rede');
           showNotification(title, msg);
         }
         hostsStatus[change.ip] = change.type === 'online';

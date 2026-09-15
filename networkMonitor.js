@@ -50,9 +50,10 @@ async function getExternalIP() {
  * @param {string[]} ipList - Lista de IPs ou hostnames para verificar
  * @param {number} timeout - Timeout em segundos para o ping
  * @param {Object} internetCheck - Configuração para verificar internet {enabled, host, label}
- * @returns {Promise<Array<{ip: string, online: boolean, isInternet: boolean}>>}
+ * @param {Array<{host: string, label: string}>} serviceChecks - Lista de serviços para verificar
+ * @returns {Promise<Array<{ip: string, online: boolean, isInternet: boolean, isService: boolean}>>}
  */
-async function getStatusList(ipList, timeout = 1, internetCheck = null) {
+async function getStatusList(ipList, timeout = 1, internetCheck = null, serviceChecks = []) {
     const hostsToCheck = [...ipList];
     
     // Adiciona verificação de internet se habilitado
@@ -60,15 +61,29 @@ async function getStatusList(ipList, timeout = 1, internetCheck = null) {
         hostsToCheck.unshift(internetCheck.host);
     }
     
+    // Adiciona verificações de serviços (ex: api.ferdium.org)
+    const serviceHosts = serviceChecks.map(s => s.host);
+    hostsToCheck.push(...serviceHosts);
+    
     const results = await Promise.all(hostsToCheck.map(async (ip) => {
         const res = await ping.promise.probe(ip, { timeout });
         const isInternet = internetCheck && internetCheck.enabled && ip === internetCheck.host;
+        const serviceCheck = serviceChecks.find(s => s.host === ip);
+        const isService = Boolean(serviceCheck);
+        
+        let displayLabel = ip;
+        if (isInternet) {
+            displayLabel = internetCheck.label;
+        } else if (isService) {
+            displayLabel = serviceCheck.label;
+        }
         
         return { 
             ip, 
             online: res.alive,
             isInternet: isInternet || false,
-            displayLabel: isInternet ? internetCheck.label : ip
+            isService,
+            displayLabel
         };
     }));
     
@@ -79,7 +94,7 @@ async function getStatusList(ipList, timeout = 1, internetCheck = null) {
  * Detecta mudanças de status entre verificações
  * @param {Object} previousStatus - Status anterior dos hosts {ip: boolean}
  * @param {Array} currentStatusList - Status atual [{ip, online}]
- * @returns {Array<{ip: string, type: 'online'|'offline', changed: boolean, isInternet: boolean}>}
+ * @returns {Array<{ip: string, type: 'online'|'offline', changed: boolean, isInternet: boolean, isService: boolean}>}
  */
 function detectStatusChanges(previousStatus, currentStatusList) {
     const changes = [];
@@ -92,6 +107,7 @@ function detectStatusChanges(previousStatus, currentStatusList) {
                 type: s.online ? 'online' : 'offline', 
                 changed: false,
                 isInternet: s.isInternet || false,
+                isService: s.isService || false,
                 displayLabel: s.displayLabel || s.ip
             });
         }
@@ -102,6 +118,7 @@ function detectStatusChanges(previousStatus, currentStatusList) {
                 type: 'online', 
                 changed: true,
                 isInternet: s.isInternet || false,
+                isService: s.isService || false,
                 displayLabel: s.displayLabel || s.ip
             });
         }
@@ -112,6 +129,7 @@ function detectStatusChanges(previousStatus, currentStatusList) {
                 type: 'offline', 
                 changed: true,
                 isInternet: s.isInternet || false,
+                isService: s.isService || false,
                 displayLabel: s.displayLabel || s.ip
             });
         }
@@ -122,6 +140,7 @@ function detectStatusChanges(previousStatus, currentStatusList) {
                 type: s.online ? 'online' : 'offline', 
                 changed: false,
                 isInternet: s.isInternet || false,
+                isService: s.isService || false,
                 displayLabel: s.displayLabel || s.ip
             });
         }
@@ -146,9 +165,10 @@ async function createMenuTemplate(statusList, onUpdate, onQuit, updateOptions = 
         canInstallUpdate = false
     } = updateOptions;
 
-    // Separa internet check dos demais hosts
+    // Separa internet check, serviços e demais hosts
     const internetStatus = statusList.find(s => s.isInternet);
-    const hostStatuses = statusList.filter(s => !s.isInternet);
+    const serviceStatuses = statusList.filter(s => s.isService);
+    const hostStatuses = statusList.filter(s => !s.isInternet && !s.isService);
     
     const menuItems = [
         { label: '🖥️ Monitoramento de Rede', enabled: false },
@@ -178,6 +198,17 @@ async function createMenuTemplate(statusList, onUpdate, onQuit, updateOptions = 
             label: `${internetStatus.displayLabel} — ${internetStatus.online ? '✅ Conectado' : '❌ Sem conexão'}`,
             enabled: false
         });
+        menuItems.push({ type: 'separator' });
+    }
+    
+    // Adiciona status dos serviços (ex: Ferdium API)
+    serviceStatuses.forEach(s => {
+        menuItems.push({
+            label: `${s.displayLabel || s.ip} — ${s.online ? '✅ Online' : '❌ Offline'}`,
+            enabled: false
+        });
+    });
+    if (serviceStatuses.length > 0) {
         menuItems.push({ type: 'separator' });
     }
     
