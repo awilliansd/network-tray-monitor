@@ -42,7 +42,10 @@ jest.mock('./config', () => ({
     enabled: true,
     host: '8.8.8.8',
     label: '🌐 Internet (Google DNS)'
-  }
+  },
+  SERVICE_CHECKS: [
+    { host: 'api.ferdium.org', label: '💬 Ferdium API' }
+  ]
 }));
 
 jest.mock('path', () => ({
