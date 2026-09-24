@@ -44,12 +44,27 @@ describe('NetworkMonitor', () => {
     ]);
   });
 
-  test('getStatusList retorna status correto com service checks', async () => {
-    ping.promise.probe = jest.fn()
+  test('getStatusList usa HTTPS para serviços (200 = online)', async () => {
+    jest.resetModules();
+    jest.doMock('https', () => ({
+      request: jest.fn((options, callback) => {
+        const mockResponse = {
+          statusCode: 200,
+          resume: jest.fn(),
+          on: jest.fn()
+        };
+        callback(mockResponse);
+        return { on: jest.fn(), end: jest.fn() };
+      })
+    }), { virtual: true });
+
+    const { getStatusList } = require('./networkMonitor');
+
+    const pingMock = require('ping');
+    pingMock.promise.probe = jest.fn()
       .mockResolvedValueOnce({ alive: true }) // Internet
       .mockResolvedValueOnce({ alive: true }) // HOST1
-      .mockResolvedValueOnce({ alive: false }) // HOST2
-      .mockResolvedValueOnce({ alive: true }); // api.ferdium.org
+      .mockResolvedValueOnce({ alive: false }); // HOST2
 
     const internetCheck = {
       enabled: true,
@@ -69,6 +84,68 @@ describe('NetworkMonitor', () => {
       { ip: 'HOST2', online: false, isInternet: false, isService: false, displayLabel: 'HOST2' },
       { ip: 'api.ferdium.org', online: true, isInternet: false, isService: true, displayLabel: '💬 Ferdium API' }
     ]);
+  });
+
+  test('getStatusList marca serviço offline com HTTP 502', async () => {
+    jest.resetModules();
+    jest.doMock('https', () => ({
+      request: jest.fn((options, callback) => {
+        const mockResponse = {
+          statusCode: 502,
+          resume: jest.fn(),
+          on: jest.fn()
+        };
+        callback(mockResponse);
+        return { on: jest.fn(), end: jest.fn() };
+      })
+    }), { virtual: true });
+
+    const { getStatusList } = require('./networkMonitor');
+
+    const pingMock = require('ping');
+    pingMock.promise.probe = jest.fn().mockResolvedValue({ alive: true });
+
+    const result = await getStatusList(['HOST1'], 1, null, [
+      { host: 'api.ferdium.org', label: '💬 Ferdium API' }
+    ]);
+
+    expect(result).toEqual([
+      { ip: 'HOST1', online: true, isInternet: false, isService: false, displayLabel: 'HOST1' },
+      { ip: 'api.ferdium.org', online: false, isInternet: false, isService: true, displayLabel: '💬 Ferdium API' }
+    ]);
+  });
+
+  test('getStatusList marca serviço offline em erro de conexão', async () => {
+    jest.resetModules();
+    jest.doMock('https', () => ({
+      request: jest.fn(() => {
+        return {
+          on: jest.fn((event, handler) => {
+            if (event === 'error') {
+              handler(new Error('Erro de conexão'));
+            }
+          }),
+          end: jest.fn()
+        };
+      })
+    }), { virtual: true });
+
+    const { getStatusList } = require('./networkMonitor');
+
+    const pingMock = require('ping');
+    pingMock.promise.probe = jest.fn().mockResolvedValue({ alive: true });
+
+    const result = await getStatusList(['HOST1'], 1, null, [
+      { host: 'api.ferdium.org', label: '💬 Ferdium API' }
+    ]);
+
+    expect(result[1]).toEqual({
+      ip: 'api.ferdium.org',
+      online: false,
+      isInternet: false,
+      isService: true,
+      displayLabel: '💬 Ferdium API'
+    });
   });
 
   test('detectStatusChanges detecta mudança para online', () => {
