@@ -46,6 +46,38 @@ async function getExternalIP() {
 }
 
 /**
+ * Verifica a disponibilidade de um serviço via HTTPS
+ * @param {string} host - Hostname do serviço (ex: api.ferdium.org)
+ * @param {number} timeoutMs - Timeout em milissegundos
+ * @returns {Promise<boolean>} true se status 2xx/3xx, false caso contrário
+ */
+function probeHttps(host, timeoutMs = 5000) {
+    return new Promise((resolve) => {
+        const options = {
+            hostname: host,
+            port: 443,
+            path: '/',
+            method: 'GET',
+            timeout: timeoutMs
+        };
+
+        const req = https.request(options, (res) => {
+            res.resume();
+            res.on('error', () => resolve(false));
+            resolve(res.statusCode >= 200 && res.statusCode < 400);
+        });
+
+        req.on('error', () => resolve(false));
+        req.on('timeout', () => {
+            req.destroy();
+            resolve(false);
+        });
+
+        req.end();
+    });
+}
+
+/**
  * Verifica o status online/offline de uma lista de IPs
  * @param {string[]} ipList - Lista de IPs ou hostnames para verificar
  * @param {number} timeout - Timeout em segundos para o ping
@@ -66,10 +98,19 @@ async function getStatusList(ipList, timeout = 1, internetCheck = null, serviceC
     hostsToCheck.push(...serviceHosts);
     
     const results = await Promise.all(hostsToCheck.map(async (ip) => {
-        const res = await ping.promise.probe(ip, { timeout });
         const isInternet = internetCheck && internetCheck.enabled && ip === internetCheck.host;
         const serviceCheck = serviceChecks.find(s => s.host === ip);
         const isService = Boolean(serviceCheck);
+        
+        let online;
+        if (isService) {
+            // Serviços web são verificados via HTTPS, pois o ping ICMP não
+            // detecta erros do aplicativo (ex: HTTP 502)
+            online = await probeHttps(serviceCheck.host);
+        } else {
+            const res = await ping.promise.probe(ip, { timeout });
+            online = res.alive;
+        }
         
         let displayLabel = ip;
         if (isInternet) {
@@ -80,7 +121,7 @@ async function getStatusList(ipList, timeout = 1, internetCheck = null, serviceC
         
         return { 
             ip, 
-            online: res.alive,
+            online,
             isInternet: isInternet || false,
             isService,
             displayLabel
@@ -273,6 +314,7 @@ async function createMenuTemplate(statusList, onUpdate, onQuit, updateOptions = 
 
 module.exports = {
     getExternalIP,
+    probeHttps,
     getStatusList,
     detectStatusChanges,
     createMenuTemplate
