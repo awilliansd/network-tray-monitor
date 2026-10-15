@@ -4,7 +4,7 @@
   "description": "Monitoramento de computadores na rede via bandeja do sistema",
   "main": "main.js",
   "engines": {
-    "node": ">=22",
+    "node": ">=24",
     "npm": ">=10"
   },
   "scripts": {
